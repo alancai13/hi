@@ -10,8 +10,8 @@ from datetime import datetime
 from enum import Enum
 from uuid import uuid4
 
-
 # ─── Enums ────────────────────────────────────────────────────────────────────
+
 
 class JobStatus(str, Enum):
     pending = "pending"
@@ -27,9 +27,11 @@ class OutputFormat(str, Enum):
 
 # ─── Uploaded file ────────────────────────────────────────────────────────────
 
+
 @dataclass
 class UploadedFile:
     """A file the user attached to the generation request."""
+
     filename: str
     content_type: str
     data: bytes
@@ -54,40 +56,45 @@ class UploadedFile:
 
 # ─── Page inspection ──────────────────────────────────────────────────────────
 
+
 @dataclass
 class PageElement:
     """A single interactive element found on the target page."""
-    tag: str                        # input, button, a, select, textarea
-    element_type: str | None        # input type attr (text, email, password…)
-    text: str | None                # visible text / button label
-    name: str | None                # name attribute
-    element_id: str | None          # id attribute
+
+    tag: str  # input, button, a, select, textarea
+    element_type: str | None  # input type attr (text, email, password…)
+    text: str | None  # visible text / button label
+    name: str | None  # name attribute
+    element_id: str | None  # id attribute
     placeholder: str | None
     aria_label: str | None
     data_testid: str | None
-    href: str | None = None         # for <a> tags
+    href: str | None = None  # for <a> tags
     required: bool = False
 
 
 @dataclass
 class PageSnapshot:
     """Everything Playwright captured about the target URL."""
+
     url: str
     title: str
     meta_description: str | None = None
-    screenshot_bytes: bytes | None = None   # PNG bytes of viewport
-    headings: list[dict] = field(default_factory=list)       # [{level, text}]
+    screenshot_bytes: bytes | None = None  # PNG bytes of viewport
+    headings: list[dict] = field(default_factory=list)  # [{level, text}]
     elements: list[PageElement] = field(default_factory=list)
-    page_text_excerpt: str | None = None    # visible text, first 2000 chars
+    page_text_excerpt: str | None = None  # visible text, first 2000 chars
 
 
 # ─── Generation output ────────────────────────────────────────────────────────
 
+
 @dataclass
 class GenerationWarning:
     """A quality signal emitted during any pipeline stage."""
-    type: str       # selector_fragile | requirement_ambiguous | page_unreachable …
-    severity: str   # info | warning | error
+
+    type: str  # selector_fragile | requirement_ambiguous | page_unreachable …
+    severity: str  # info | warning | error
     message: str
     element: str | None = None
 
@@ -95,6 +102,7 @@ class GenerationWarning:
 @dataclass
 class GeneratedArtifact:
     """The final output of the generation pipeline."""
+
     job_id: str
     output_format: OutputFormat
     code: str
@@ -105,9 +113,11 @@ class GeneratedArtifact:
 
 # ─── Job ──────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class TestScenarioInput:
     """Normalised user intent from the HTTP request."""
+
     target_url: str
     requirements: str
     output_format: OutputFormat = OutputFormat.playwright
@@ -116,6 +126,7 @@ class TestScenarioInput:
 @dataclass
 class GenerationJob:
     """Full lifecycle of a single generation request."""
+
     job_id: str = field(default_factory=lambda: str(uuid4()))
     status: JobStatus = JobStatus.pending
     input: TestScenarioInput | None = None

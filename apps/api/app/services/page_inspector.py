@@ -37,7 +37,8 @@ _EXTRACT_ELEMENTS_JS = """
     });
 
     // Buttons and submit inputs
-    document.querySelectorAll('button, [role="button"], input[type="submit"], input[type="button"]').forEach(el => {
+    const btnSelector = 'button, [role="button"], input[type="submit"], input[type="button"]';
+    document.querySelectorAll(btnSelector).forEach(el => {
         const text = (el.innerText || el.value || '').trim().substring(0, 80);
         els.push({
             tag: 'button',
@@ -114,7 +115,8 @@ class PageInspector:
             from playwright.async_api import async_playwright  # lazy import
         except ImportError as exc:
             raise RuntimeError(
-                "Playwright is not installed. Run: pip install playwright && playwright install chromium"
+                "Playwright is not installed. "
+                "Run: pip install playwright && playwright install chromium"
             ) from exc
 
         logger.info("Inspecting page: %s", url)
@@ -165,9 +167,7 @@ class PageInspector:
             for e in raw_elements
         ]
 
-        logger.info(
-            "Page inspection complete: title=%r, elements=%d", title, len(elements)
-        )
+        logger.info("Page inspection complete: title=%r, elements=%d", title, len(elements))
 
         return PageSnapshot(
             url=url,

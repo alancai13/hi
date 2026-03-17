@@ -49,9 +49,11 @@ def build_parts(job: GenerationJob, snapshot: PageSnapshot) -> list[GeminiPart]:
 
     # ── Page screenshot ───────────────────────────────────────────────────────
     if snapshot.screenshot_bytes:
-        parts.append(GeminiPart(
-            text="[Page screenshot — use this to understand the visual layout and identify elements]"
-        ))
+        parts.append(
+            GeminiPart(
+                text="[Page screenshot — use this to understand the layout and identify elements]"
+            )
+        )
         parts.append(GeminiPart(data=snapshot.screenshot_bytes, mime_type="image/png"))
     else:
         parts.append(GeminiPart(text="[No page screenshot available]"))
@@ -60,17 +62,19 @@ def build_parts(job: GenerationJob, snapshot: PageSnapshot) -> list[GeminiPart]:
     if job.input and job.input.requirements.strip():
         parts.append(GeminiPart(text=f"## Test Requirements\n\n{job.input.requirements.strip()}"))
     else:
-        parts.append(GeminiPart(
-            text=(
-                "## Test Requirements\n\n"
-                "No explicit requirements were provided. "
-                "Analyse the page and generate comprehensive tests covering:\n"
-                "- Core user flows visible on the page\n"
-                "- Form validation (if forms exist)\n"
-                "- Navigation and link behaviour\n"
-                "- Key assertions for visible content"
+        parts.append(
+            GeminiPart(
+                text=(
+                    "## Test Requirements\n\n"
+                    "No explicit requirements were provided. "
+                    "Analyse the page and generate comprehensive tests covering:\n"
+                    "- Core user flows visible on the page\n"
+                    "- Form validation (if forms exist)\n"
+                    "- Navigation and link behaviour\n"
+                    "- Key assertions for visible content"
+                )
             )
-        ))
+        )
 
     # ── Uploaded requirement documents ────────────────────────────────────────
     doc_parts = _format_requirement_docs(job)
@@ -79,10 +83,12 @@ def build_parts(job: GenerationJob, snapshot: PageSnapshot) -> list[GeminiPart]:
 
     # ── User-uploaded screenshots ─────────────────────────────────────────────
     if job.screenshots:
-        parts.append(GeminiPart(
-            text=f"## User-Provided Screenshots ({len(job.screenshots)} image(s))\n"
-                 "These are reference screenshots provided by the tester:"
-        ))
+        parts.append(
+            GeminiPart(
+                text=f"## User-Provided Screenshots ({len(job.screenshots)} image(s))\n"
+                "These are reference screenshots provided by the tester:"
+            )
+        )
         for shot in job.screenshots:
             if shot.is_image:
                 parts.append(GeminiPart(text=f"[Screenshot: {shot.filename}]"))
@@ -95,6 +101,7 @@ def build_parts(job: GenerationJob, snapshot: PageSnapshot) -> list[GeminiPart]:
 
 
 # ─── Formatters ───────────────────────────────────────────────────────────────
+
 
 def _format_page_context(snapshot: PageSnapshot) -> str:
     lines = ["## Target Page\n"]

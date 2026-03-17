@@ -22,6 +22,7 @@ logger = get_logger(__name__)
 @dataclass
 class GeminiPart:
     """A single content part — either text or raw bytes (image)."""
+
     text: str | None = None
     data: bytes | None = None
     mime_type: str | None = None  # required when data is set
@@ -53,9 +54,7 @@ class GeminiClient:
             import google.generativeai as genai  # type: ignore[import-untyped]
 
             if not settings.GEMINI_API_KEY:
-                raise RuntimeError(
-                    "GEMINI_API_KEY is not set. Add it to apps/api/.env"
-                )
+                raise RuntimeError("GEMINI_API_KEY is not set. Add it to apps/api/.env")
             genai.configure(api_key=settings.GEMINI_API_KEY)
             self._model = genai.GenerativeModel(settings.GEMINI_MODEL)
             logger.info("Gemini client initialised (API key, model=%s)", settings.GEMINI_MODEL)
@@ -65,9 +64,7 @@ class GeminiClient:
             from vertexai.generative_models import GenerativeModel  # type: ignore[import-untyped]
 
             if not settings.GCP_PROJECT:
-                raise RuntimeError(
-                    "GCP_PROJECT is not set. Add it to apps/api/.env"
-                )
+                raise RuntimeError("GCP_PROJECT is not set. Add it to apps/api/.env")
             vertexai.init(project=settings.GCP_PROJECT, location=settings.GCP_LOCATION)
             self._model = GenerativeModel(settings.GEMINI_MODEL)
             logger.info(
@@ -77,7 +74,9 @@ class GeminiClient:
             )
 
         else:
-            raise RuntimeError(f"Unknown GEMINI_BACKEND: {backend!r}. Use 'gemini_api' or 'vertex'.")
+            raise RuntimeError(
+                f"Unknown GEMINI_BACKEND: {backend!r}. Use 'gemini_api' or 'vertex'."
+            )
 
         return self._model
 

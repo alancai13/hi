@@ -9,13 +9,11 @@ Pipeline stages:
        c. Persist artifact, mark job completed
 """
 
-import asyncio
 from datetime import datetime
 
 from app.core.logging import get_logger
 from app.domain.models import (
     GenerationJob,
-    GenerationWarning,
     JobStatus,
     OutputFormat,
     TestScenarioInput,
@@ -59,7 +57,11 @@ class GenerationService:
         scenario_input = TestScenarioInput(
             target_url=target_url,
             requirements=requirements,
-            output_format=OutputFormat(output_format) if output_format in OutputFormat._value2member_map_ else OutputFormat.playwright,
+            output_format=(
+                OutputFormat(output_format)
+                if output_format in OutputFormat._value2member_map_
+                else OutputFormat.playwright
+            ),
         )
 
         job = GenerationJob(

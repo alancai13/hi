@@ -13,8 +13,8 @@ from typing import Literal
 
 from pydantic import AnyHttpUrl, BaseModel, Field
 
-
 # ─── Enums ────────────────────────────────────────────────────────────────────
+
 
 class OutputFormat(str, Enum):
     playwright = "playwright"
@@ -43,6 +43,7 @@ class WarningType(str, Enum):
 
 # ─── Request ──────────────────────────────────────────────────────────────────
 
+
 class GenerationRequest(BaseModel):
     """Incoming request to generate an E2E test script."""
 
@@ -56,7 +57,7 @@ class GenerationRequest(BaseModel):
         min_length=5,
         max_length=2000,
         description="Plain-English acceptance criteria describing the test scenario.",
-        examples=["User can log in with a valid email and password and is redirected to the dashboard."],
+        examples=["User can log in with valid credentials and is redirected to the dashboard."],
     )
     output_format: OutputFormat = Field(
         default=OutputFormat.playwright,
@@ -65,6 +66,7 @@ class GenerationRequest(BaseModel):
 
 
 # ─── Sub-models ───────────────────────────────────────────────────────────────
+
 
 class GenerationWarning(BaseModel):
     """A warning about a potential issue in the generated test."""
@@ -79,6 +81,7 @@ class GenerationWarning(BaseModel):
 
 
 # ─── Responses ────────────────────────────────────────────────────────────────
+
 
 class CreateJobResponse(BaseModel):
     """Returned immediately after a job is created."""

@@ -66,6 +66,7 @@ class CodeGenerator:
 
 # ─── Response parsing ─────────────────────────────────────────────────────────
 
+
 def _extract_code(raw: str) -> str:
     """
     Strip markdown fences from the LLM response.
@@ -87,6 +88,7 @@ def _extract_code(raw: str) -> str:
 
 # ─── Code analysis ────────────────────────────────────────────────────────────
 
+
 def _analyse_code(code: str, snapshot: PageSnapshot) -> list[GenerationWarning]:
     """
     Inspect the generated code and emit warnings for common issues.
@@ -95,52 +97,65 @@ def _analyse_code(code: str, snapshot: PageSnapshot) -> list[GenerationWarning]:
     warnings: list[GenerationWarning] = []
 
     if not code.strip():
-        warnings.append(GenerationWarning(
-            type="generation_empty",
-            severity="error",
-            message="Gemini returned an empty response. Check your API key and model settings.",
-        ))
+        warnings.append(
+            GenerationWarning(
+                type="generation_empty",
+                severity="error",
+                message="Gemini returned an empty response. Check your API key and model settings.",
+            )
+        )
         return warnings
 
     if "waitForTimeout" in code:
-        warnings.append(GenerationWarning(
-            type="fragile_wait",
-            severity="warning",
-            message=(
-                "Generated script uses waitForTimeout() — replace with waitForSelector(), "
-                "waitForURL(), or expect(...).toBeVisible() for more reliable tests."
-            ),
-        ))
+        warnings.append(
+            GenerationWarning(
+                type="fragile_wait",
+                severity="warning",
+                message=(
+                    "Generated script uses waitForTimeout() — replace with waitForSelector(), "
+                    "waitForURL(), or expect(...).toBeVisible() for more reliable tests."
+                ),
+            )
+        )
 
     # Detect text-based selectors where a testid would be more stable
     text_selectors = re.findall(r"getByText\(['\"]([^'\"]+)['\"]", code)
     for sel in text_selectors[:3]:  # warn on first 3 occurrences
-        warnings.append(GenerationWarning(
-            type="selector_fragile",
-            severity="info",
-            message=f"Selector by text {sel!r} may break if the copy changes. Consider adding data-testid.",
-            element=f"getByText('{sel}')",
-        ))
+        warnings.append(
+            GenerationWarning(
+                type="selector_fragile",
+                severity="info",
+                message=(
+                    f"Selector by text {sel!r} may break if copy changes. "
+                    "Consider adding data-testid."
+                ),
+                element=f"getByText('{sel}')",
+            )
+        )
 
     # If no assertions found, warn
     if "expect(" not in code:
-        warnings.append(GenerationWarning(
-            type="no_assertions",
-            severity="warning",
-            message="No expect() assertions found in the generated script. Consider adding assertions.",
-        ))
+        warnings.append(
+            GenerationWarning(
+                type="no_assertions",
+                severity="warning",
+                message="No expect() assertions found in the generated script.",
+            )
+        )
 
     # If page has elements with data-testid but code doesn't use getByTestId
     has_testids = any(el.data_testid for el in snapshot.elements)
     if has_testids and "getByTestId" not in code and "data-testid" not in code:
-        warnings.append(GenerationWarning(
-            type="missed_testid",
-            severity="info",
-            message=(
-                "The page has elements with data-testid attributes. "
-                "Consider using page.getByTestId() for more stable selectors."
-            ),
-        ))
+        warnings.append(
+            GenerationWarning(
+                type="missed_testid",
+                severity="info",
+                message=(
+                    "The page has elements with data-testid attributes. "
+                    "Consider using page.getByTestId() for more stable selectors."
+                ),
+            )
+        )
 
     return warnings
 

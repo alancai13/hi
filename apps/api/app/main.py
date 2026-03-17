@@ -12,7 +12,10 @@ from app.core.config import settings
 
 app = FastAPI(
     title="TestGen API",
-    description="E2E Test Script Generator — generates Playwright test scripts from plain-English requirements.",
+    description=(
+        "E2E Test Script Generator — generates Playwright test scripts "
+        "from plain-English requirements."
+    ),
     version=settings.APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",

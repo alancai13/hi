@@ -46,21 +46,25 @@ async def create_generation_job(
     for f in requirement_files:
         if f.filename:
             data = await f.read()
-            req_files.append(UploadedFile(
-                filename=f.filename,
-                content_type=f.content_type or "application/octet-stream",
-                data=data,
-            ))
+            req_files.append(
+                UploadedFile(
+                    filename=f.filename,
+                    content_type=f.content_type or "application/octet-stream",
+                    data=data,
+                )
+            )
 
     shot_files: list[UploadedFile] = []
     for f in screenshots:
         if f.filename:
             data = await f.read()
-            shot_files.append(UploadedFile(
-                filename=f.filename,
-                content_type=f.content_type or "image/png",
-                data=data,
-            ))
+            shot_files.append(
+                UploadedFile(
+                    filename=f.filename,
+                    content_type=f.content_type or "image/png",
+                    data=data,
+                )
+            )
 
     job_response = await _service.create_job(
         target_url=target_url,
