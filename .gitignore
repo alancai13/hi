@@ -14,8 +14,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# lib/ and lib64/ are Python venv directories — scope to avoid matching apps/web/lib
+/lib/
+/lib64/
+apps/api/lib/
+apps/api/lib64/
 parts/
 sdist/
 var/
