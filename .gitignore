@@ -205,3 +205,31 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ─── Node / Next.js ───────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# ─── Environment variables ────────────────────────────────────────────────────
+.env.local
+.env.*.local
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Test artifacts ───────────────────────────────────────────────────────────
+test-results/
+playwright-report/
+allure-results/
+allure-report/
+
+# ─── Generated output (future) ────────────────────────────────────────────────
+generated/
+artifacts/

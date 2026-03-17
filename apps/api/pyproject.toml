@@ -1,0 +1,36 @@
+[project]
+name = "testgen-api"
+version = "0.1.0"
+description = "TestGen — E2E Test Script Generator API"
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["app"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B008",  # do not perform function calls in default arguments (FastAPI pattern)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# TODO: Add mypy configuration when type checking is enforced
+# [tool.mypy]
+# python_version = "3.11"
+# strict = true
+# plugins = ["pydantic.mypy"]

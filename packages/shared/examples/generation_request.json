@@ -1,0 +1,6 @@
+{
+  "_comment": "Example payload for POST /api/v1/generate",
+  "target_url": "https://example.com/login",
+  "requirements": "User can log in with a valid email and password. After submitting the form, the user should be redirected to the dashboard page and see a welcome message.",
+  "output_format": "playwright"
+}

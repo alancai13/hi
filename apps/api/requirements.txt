@@ -1,0 +1,33 @@
+# TestGen API — Python dependencies
+#
+# Install: pip install -r requirements.txt
+# Recommended: use a virtual environment (python -m venv .venv)
+
+# ─── Web framework ────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# ─── Validation / settings ────────────────────────────────────────────────────
+pydantic==2.7.1
+pydantic-settings==2.3.0
+
+# ─── HTTP client (for future outbound calls) ──────────────────────────────────
+httpx==0.27.0
+
+# ─── Browser automation (future — page inspection) ───────────────────────────
+# playwright==1.44.0
+# Uncomment when PageInspector is implemented.
+# After installing: playwright install chromium
+
+# ─── Dev / tooling ────────────────────────────────────────────────────────────
+ruff==0.4.4
+pytest==8.2.0
+pytest-asyncio==0.23.6
+
+# ─── Future dependencies (commented out) ─────────────────────────────────────
+# sqlalchemy[asyncio]==2.0.30      # when persistence is added
+# alembic==1.13.1                   # DB migrations
+# redis==5.0.4                      # job queue / caching
+# celery==5.4.0                     # async task execution
+# anthropic==0.28.0                 # LLM integration (Claude)
+# openai==1.30.0                    # LLM integration (GPT, optional)

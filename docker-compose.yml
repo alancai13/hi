@@ -1,0 +1,57 @@
+# docker-compose.yml — TestGen monorepo
+#
+# STATUS: Skeleton only. Services are defined but build contexts and
+#         configuration should be filled in as the project matures.
+#
+# Usage:
+#   docker-compose up --build
+
+version: "3.9"
+
+services:
+  # ─── Frontend (Next.js) ─────────────────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+    depends_on:
+      - api
+    # TODO: Add volume mounts for hot-reload in dev mode
+
+  # ─── Backend (FastAPI) ──────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=info
+    # TODO: Add database service dependency when persistence is added
+    # TODO: Mount .env file or use Docker secrets for sensitive config
+
+  # ─── Future services (commented out until needed) ───────────────────────────
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   # Used for: job queue, caching page snapshots
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: testgen
+  #     POSTGRES_USER: testgen
+  #     POSTGRES_PASSWORD: changeme
+  #   ports:
+  #     - "5432:5432"
+  #   # Used for: persisting generation jobs, saved scripts, user history
+
+networks:
+  default:
+    name: testgen-network

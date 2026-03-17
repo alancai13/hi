@@ -1,0 +1,19 @@
+{
+  "_comment": "Example payload for GET /api/v1/jobs/{job_id} — completed state",
+  "job_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "completed",
+  "created_at": "2024-01-01T00:00:00Z",
+  "completed_at": "2024-01-01T00:00:05Z",
+  "scenario_summary": "Login flow: navigate to login page → enter email and password → submit form → assert redirect to /dashboard → assert welcome message is visible",
+  "warnings": [
+    {
+      "type": "selector_fragile",
+      "severity": "warning",
+      "message": "Login button was matched by visible text. Consider adding a data-testid attribute for stability.",
+      "element": "button:has-text('Log in')"
+    }
+  ],
+  "generated_code": "import { test, expect } from '@playwright/test';\n\ntest('Login flow', async ({ page }) => {\n  await page.goto('https://example.com/login');\n\n  // Fill in credentials\n  await page.fill('[name=\"email\"]', 'user@example.com');\n  await page.fill('[name=\"password\"]', 'password123');\n\n  // Submit the form\n  await page.click('button:has-text(\\'Log in\\')');\n\n  // Assert redirect and welcome message\n  await expect(page).toHaveURL('/dashboard');\n  await expect(page.getByText('Welcome')).toBeVisible();\n});\n",
+  "output_format": "playwright",
+  "error_message": null
+}
