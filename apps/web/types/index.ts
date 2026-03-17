@@ -1,11 +1,7 @@
 /**
  * types/index.ts — Frontend-local TypeScript types
- *
- * These re-export and extend the shared types from packages/shared.
- * Import from here (not directly from packages/shared) in components.
  */
 
-// Re-export shared API types
 export type {
   GenerationRequest,
   GenerationWarning,
@@ -16,14 +12,15 @@ export type {
   HealthResponse,
 } from "../../../packages/shared/types";
 
-// ─── Frontend-specific types ──────────────────────────────────────────────────
-
-/** Values collected by the GeneratorForm component. */
+/** Values collected by the GeneratorForm. */
 export interface FormValues {
   targetUrl: string;
   requirements: string;
   outputFormat: "playwright" | "robot";
+  /** Uploaded requirement documents (.pdf, .docx, .md, .txt) */
+  requirementFiles: File[];
+  /** Uploaded screenshots (.png, .jpg, .webp, etc.) */
+  screenshots: File[];
 }
 
-/** Props passed between page and result panel. */
 export type ResultPhase = "polling" | "done" | "error";

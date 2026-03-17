@@ -1,19 +1,19 @@
 """
-app/api/endpoints/generation.py — Test generation endpoints
+app/api/endpoints/generation.py
 
-POST /api/v1/generate   — submit a generation request, returns a job ID
-GET  /api/v1/jobs/{id}  — poll job status and retrieve the result
+POST /api/v1/generate   — accepts multipart/form-data with optional file uploads
+GET  /api/v1/jobs/{id}  — poll job status and result
 """
 
-from fastapi import APIRouter, HTTPException
+import asyncio
 
-from app.schemas.generation import CreateJobResponse, GenerationRequest, JobResult
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+
+from app.domain.models import UploadedFile
+from app.schemas.generation import CreateJobResponse, JobResult
 from app.services.generation_service import GenerationService
 
 router = APIRouter()
-
-# Dependency: the service layer.
-# TODO: Replace with FastAPI Depends() injection when the service has real dependencies.
 _service = GenerationService()
 
 
@@ -23,16 +23,57 @@ _service = GenerationService()
     status_code=202,
     summary="Submit a generation request",
 )
-async def create_generation_job(request: GenerationRequest) -> CreateJobResponse:
+async def create_generation_job(
+    target_url: str = Form(..., description="The URL of the web app to test"),
+    requirements: str = Form(default="", description="Plain-English acceptance criteria"),
+    output_format: str = Form(default="playwright"),
+    requirement_files: list[UploadFile] = File(default=[]),
+    screenshots: list[UploadFile] = File(default=[]),
+) -> CreateJobResponse:
     """
-    Accept a URL and plain-English requirements, create a generation job, and
-    return its ID immediately.
+    Create a generation job and return its ID immediately (non-blocking).
+    The pipeline runs in the background — poll GET /api/v1/jobs/{job_id} for results.
 
-    The actual generation pipeline runs asynchronously (stubbed for now).
-    Poll GET /api/v1/jobs/{job_id} for status and results.
+    Accepts multipart/form-data:
+    - target_url          string  (required)
+    - requirements        string
+    - output_format       playwright | robot
+    - requirement_files   one or more .pdf / .docx / .md / .txt files
+    - screenshots         one or more image files (png / jpg / webp)
     """
-    job = await _service.create_job(request)
-    return job
+    # Read uploaded file bytes eagerly (UploadFile streams are not safe to read later)
+    req_files: list[UploadedFile] = []
+    for f in requirement_files:
+        if f.filename:
+            data = await f.read()
+            req_files.append(UploadedFile(
+                filename=f.filename,
+                content_type=f.content_type or "application/octet-stream",
+                data=data,
+            ))
+
+    shot_files: list[UploadedFile] = []
+    for f in screenshots:
+        if f.filename:
+            data = await f.read()
+            shot_files.append(UploadedFile(
+                filename=f.filename,
+                content_type=f.content_type or "image/png",
+                data=data,
+            ))
+
+    job_response = await _service.create_job(
+        target_url=target_url,
+        requirements=requirements,
+        output_format=output_format,
+        requirement_files=req_files,
+        screenshots=shot_files,
+    )
+
+    # Run the real pipeline in the background — response is returned immediately
+    asyncio.create_task(_service.run_pipeline(job_response.job_id))
+
+    return job_response
 
 
 @router.get(
@@ -41,15 +82,7 @@ async def create_generation_job(request: GenerationRequest) -> CreateJobResponse
     summary="Get job status and result",
 )
 async def get_job(job_id: str) -> JobResult:
-    """
-    Retrieve the current status and result of a generation job.
-
-    Returns the job as-is, including:
-    - status (pending / running / completed / failed)
-    - scenario_summary (once available)
-    - generated_code (once available)
-    - warnings (selector confidence, ambiguous requirements, etc.)
-    """
+    """Poll this endpoint after submitting a job. Returns current status + result."""
     result = await _service.get_job(job_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Job not found")

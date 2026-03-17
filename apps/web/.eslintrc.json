@@ -1,7 +1,6 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": ["next/core-web-vitals"],
   "rules": {
-    // Add project-specific rules here
     "no-console": "warn"
   }
 }

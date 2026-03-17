@@ -1,33 +1,39 @@
 # TestGen API — Python dependencies
 #
-# Install: pip install -r requirements.txt
-# Recommended: use a virtual environment (python -m venv .venv)
+# Install:
+#   pip install -r requirements.txt
+#   playwright install chromium   ← required for page inspection
 
 # ─── Web framework ────────────────────────────────────────────────────────────
-fastapi==0.111.0
-uvicorn[standard]==0.29.0
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12      # multipart/form-data for file uploads
 
 # ─── Validation / settings ────────────────────────────────────────────────────
-pydantic==2.7.1
-pydantic-settings==2.3.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
 
-# ─── HTTP client (for future outbound calls) ──────────────────────────────────
+# ─── HTTP client ──────────────────────────────────────────────────────────────
 httpx==0.27.0
 
-# ─── Browser automation (future — page inspection) ───────────────────────────
-# playwright==1.44.0
-# Uncomment when PageInspector is implemented.
-# After installing: playwright install chromium
+# ─── Browser automation — page inspection ─────────────────────────────────────
+playwright==1.48.0
+# After first install, run:  playwright install chromium
+
+# ─── Gemini / Vertex AI ───────────────────────────────────────────────────────
+# google-generativeai: API-key auth (Google AI Studio keys, AIzaSy...)
+# google-cloud-aiplatform: Vertex AI auth (service account / ADC)
+# Both use the same Gemini models; swap via GEMINI_BACKEND in .env
+google-generativeai==0.8.3
 
 # ─── Dev / tooling ────────────────────────────────────────────────────────────
-ruff==0.4.4
-pytest==8.2.0
-pytest-asyncio==0.23.6
+ruff==0.7.0
+pytest==8.3.3
+pytest-asyncio==0.24.0
 
-# ─── Future dependencies (commented out) ─────────────────────────────────────
-# sqlalchemy[asyncio]==2.0.30      # when persistence is added
-# alembic==1.13.1                   # DB migrations
-# redis==5.0.4                      # job queue / caching
-# celery==5.4.0                     # async task execution
-# anthropic==0.28.0                 # LLM integration (Claude)
-# openai==1.30.0                    # LLM integration (GPT, optional)
+# ─── Future dependencies (commented until needed) ─────────────────────────────
+# google-cloud-aiplatform>=1.60.0  # Vertex AI service-account auth
+# sqlalchemy[asyncio]==2.0.30
+# alembic==1.13.1
+# redis==5.0.4
+# celery==5.4.0

@@ -1,8 +1,8 @@
 """
 app/core/config.py — Application configuration
 
-Reads settings from environment variables (and a .env file in development).
-All configuration lives here — no scattered os.getenv() calls elsewhere.
+All settings come from environment variables / .env file.
+No scattered os.getenv() calls elsewhere in the codebase.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,17 +22,22 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "info"
 
     # ─── CORS ─────────────────────────────────────────────────────────────────
-    # Comma-separated list of allowed origins, e.g. "http://localhost:3000,https://app.example.com"
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    # ─── LLM (future) ─────────────────────────────────────────────────────────
-    # ANTHROPIC_API_KEY: str = ""
-    # OPENAI_API_KEY: str = ""
-    # LLM_PROVIDER: str = "anthropic"
+    # ─── Gemini / AI ──────────────────────────────────────────────────────────
+    # "gemini_api" → uses GEMINI_API_KEY (Google AI Studio)
+    # "vertex"     → uses GCP_PROJECT + GOOGLE_APPLICATION_CREDENTIALS
+    GEMINI_BACKEND: str = "gemini_api"
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
-    # ─── Playwright (future) ──────────────────────────────────────────────────
-    # PLAYWRIGHT_TIMEOUT_MS: int = 30_000
-    # PLAYWRIGHT_HEADLESS: bool = True
+    # Vertex AI (only needed when GEMINI_BACKEND=vertex)
+    GCP_PROJECT: str = ""
+    GCP_LOCATION: str = "us-central1"
+
+    # ─── Playwright ───────────────────────────────────────────────────────────
+    PLAYWRIGHT_TIMEOUT_MS: int = 30_000
+    PLAYWRIGHT_HEADLESS: bool = True
 
     # ─── Persistence (future) ─────────────────────────────────────────────────
     # DATABASE_URL: str = ""
@@ -42,6 +47,13 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         return self.APP_ENV == "development"
 
+    @property
+    def gemini_configured(self) -> bool:
+        if self.GEMINI_BACKEND == "gemini_api":
+            return bool(self.GEMINI_API_KEY)
+        if self.GEMINI_BACKEND == "vertex":
+            return bool(self.GCP_PROJECT)
+        return False
 
-# Single settings instance — import this everywhere.
+
 settings = Settings()

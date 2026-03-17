@@ -1,15 +1,5 @@
 "use client";
 
-/**
- * app/page.tsx — Main page
- *
- * Renders the generation form and the result panel.
- * Manages top-level state: job ID, poll status, final result.
- *
- * TODO: Extract state management into a custom hook (useGenerationJob)
- *       once the API client is wired to a real backend.
- */
-
 import { useState } from "react";
 import { GeneratorForm } from "@/components/GeneratorForm";
 import { ResultPanel } from "@/components/ResultPanel";
@@ -28,73 +18,73 @@ export default function HomePage() {
 
   const handleSubmit = async (values: FormValues) => {
     setState({ phase: "submitting" });
-
     try {
       const { job_id } = await createJob(values);
       setState({ phase: "polling", jobId: job_id });
-
-      // TODO: Replace with SSE or WebSocket subscription when available.
-      //       Currently polls every 1.5 seconds until completed or failed.
       const result = await pollJob(job_id, {
-        onStatusChange: (status) => {
-          // Re-render with updated phase while still polling
-          setState({ phase: "polling", jobId: job_id });
-          console.info("Job status:", status);
-        },
+        onStatusChange: () => setState({ phase: "polling", jobId: job_id }),
       });
-
       setState({ phase: "done", result });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unexpected error";
-      setState({ phase: "error", message });
+      setState({ phase: "error", message: err instanceof Error ? err.message : "Unexpected error" });
     }
   };
 
-  const handleReset = () => setState({ phase: "idle" });
+  const isLoading = state.phase === "submitting" || state.phase === "polling";
 
   return (
-    <div>
-      <section style={styles.hero}>
-        <h1 style={styles.heading}>Generate E2E Test Scripts</h1>
-        <p style={styles.subheading}>
-          Enter a URL and your acceptance criteria — TestGen will inspect the page and
-          generate a Playwright test script.
+    <div style={s.page}>
+      <div style={s.hero}>
+        <h1 style={s.heading}>E2E Test Generator</h1>
+        <p style={s.sub}>
+          Provide a URL, acceptance criteria, and any relevant files or screenshots.
+          TestGen will inspect the page and generate a Playwright test script.
         </p>
-      </section>
+      </div>
 
-      <GeneratorForm
-        onSubmit={handleSubmit}
-        isLoading={state.phase === "submitting" || state.phase === "polling"}
-      />
+      <GeneratorForm onSubmit={handleSubmit} isLoading={isLoading} />
 
-      {(state.phase === "polling" ||
-        state.phase === "done" ||
-        state.phase === "error") && (
-        <ResultPanel
-          phase={state.phase}
-          result={state.phase === "done" ? state.result : undefined}
-          jobId={state.phase === "polling" ? state.jobId : undefined}
-          errorMessage={state.phase === "error" ? state.message : undefined}
-          onReset={handleReset}
-        />
+      {state.phase !== "idle" && state.phase !== "submitting" && (
+        <div style={s.results}>
+          <ResultPanel
+            phase={state.phase === "polling" ? "polling" : state.phase === "done" ? "done" : "error"}
+            result={state.phase === "done" ? state.result : undefined}
+            jobId={state.phase === "polling" ? state.jobId : undefined}
+            errorMessage={state.phase === "error" ? state.message : undefined}
+            onReset={() => setState({ phase: "idle" })}
+          />
+        </div>
       )}
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
+  page: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2rem",
+  },
   hero: {
-    marginBottom: "2rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.5rem",
   },
   heading: {
-    fontSize: "1.75rem",
+    fontSize: "1.5rem",
     fontWeight: 700,
     letterSpacing: "-0.03em",
-    marginBottom: "0.5rem",
+    color: "var(--text)",
   },
-  subheading: {
-    color: "var(--color-text-muted)",
-    maxWidth: "600px",
-    lineHeight: 1.6,
+  sub: {
+    fontSize: "0.875rem",
+    color: "var(--text-2)",
+    maxWidth: "560px",
+    lineHeight: 1.65,
+  },
+  results: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
   },
 };

@@ -1,17 +1,5 @@
 "use client";
 
-/**
- * components/CodePreview.tsx
- *
- * Displays the generated test script with:
- *   - A plain <pre> code block (no syntax highlighter dependency yet)
- *   - Copy to clipboard button
- *   - Download as file button
- *
- * TODO: Add syntax highlighting (e.g. Shiki, Prism) when styling is polished.
- * TODO: Wire download to a real file endpoint from the backend when available.
- */
-
 import { useState } from "react";
 import type { OutputFormat } from "@/types";
 
@@ -20,7 +8,7 @@ interface Props {
   outputFormat?: OutputFormat;
 }
 
-const FILE_EXTENSIONS: Record<string, string> = {
+const EXT: Record<string, string> = {
   playwright: ".spec.ts",
   robot: ".robot",
 };
@@ -37,48 +25,35 @@ export function CodePreview({ code, outputFormat = "playwright" }: Props) {
 
   const handleDownload = () => {
     if (!code) return;
-    const ext = FILE_EXTENSIONS[outputFormat] ?? ".txt";
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `testgen_script${ext}`;
+    a.download = `testgen_script${EXT[outputFormat] ?? ".txt"}`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div style={styles.card}>
-      <div style={styles.toolbar}>
-        <h3 style={styles.heading}>Generated script</h3>
-        <div style={styles.actions}>
-          <button
-            onClick={handleCopy}
-            disabled={!code}
-            style={styles.actionButton}
-            title="Copy to clipboard"
-          >
+    <div style={s.card}>
+      <div style={s.toolbar}>
+        <span className="section-label">Generated script</span>
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          <button onClick={handleCopy} disabled={!code} style={s.btn}>
             {copied ? "✓ Copied" : "Copy"}
           </button>
-          <button
-            onClick={handleDownload}
-            disabled={!code}
-            style={styles.actionButton}
-            title={`Download as ${FILE_EXTENSIONS[outputFormat] ?? ".txt"}`}
-          >
-            Download
+          <button onClick={handleDownload} disabled={!code} style={s.btn}>
+            Download{EXT[outputFormat] ?? ""}
           </button>
         </div>
       </div>
 
       {code ? (
-        <pre style={styles.pre}>
-          <code>{code}</code>
-        </pre>
+        <pre style={s.pre}><code>{code}</code></pre>
       ) : (
-        <div style={styles.empty}>
-          <span style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-            Script will appear here once generation is complete.
+        <div style={s.empty}>
+          <span style={{ color: "var(--text-3)", fontSize: "0.82rem" }}>
+            Script will appear here once generation completes.
           </span>
         </div>
       )}
@@ -86,10 +61,10 @@ export function CodePreview({ code, outputFormat = "playwright" }: Props) {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   card: {
-    background: "var(--color-surface)",
-    border: "1px solid var(--color-border)",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: "var(--radius)",
     overflow: "hidden",
   },
@@ -97,41 +72,33 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "0.75rem 1.25rem",
-    borderBottom: "1px solid var(--color-border)",
+    padding: "0.7rem 1.1rem",
+    borderBottom: "1px solid var(--border)",
+    background: "var(--surface-2)",
   },
-  heading: {
-    fontSize: "0.8rem",
-    fontWeight: 600,
-    color: "var(--color-text-muted)",
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
-  },
-  actions: {
-    display: "flex",
-    gap: "0.5rem",
-  },
-  actionButton: {
-    background: "var(--color-surface-2)",
-    border: "1px solid var(--color-border)",
-    borderRadius: "var(--radius)",
-    color: "var(--color-text)",
+  btn: {
+    background: "var(--surface-3)",
+    border: "1px solid var(--border-2)",
+    borderRadius: "var(--radius-sm)",
+    color: "var(--text-2)",
     cursor: "pointer",
-    fontSize: "0.8rem",
-    padding: "0.3rem 0.75rem",
+    fontSize: "0.75rem",
+    padding: "0.25rem 0.65rem",
+    fontFamily: "var(--font-sans)",
   },
   pre: {
     overflowX: "auto",
-    padding: "1.25rem",
-    fontSize: "0.82rem",
-    lineHeight: 1.65,
-    color: "var(--color-text)",
-    background: "var(--color-surface-2)",
+    padding: "1.1rem 1.25rem",
+    fontSize: "0.8rem",
+    lineHeight: 1.7,
+    color: "var(--text)",
+    background: "var(--surface)",
     margin: 0,
     whiteSpace: "pre",
   },
   empty: {
     padding: "2rem",
     textAlign: "center" as const,
+    background: "var(--surface)",
   },
 };

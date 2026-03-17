@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * components/ResultPanel.tsx
- *
- * Container for all result sections. Rendered once the job is submitted.
- * Delegates display to child components for each result section.
- */
-
 import { JobStatus } from "./JobStatus";
 import { ScenarioSummary } from "./ScenarioSummary";
 import { WarningsPanel } from "./WarningsPanel";
@@ -23,15 +16,12 @@ interface Props {
 
 export function ResultPanel({ phase, result, jobId, errorMessage, onReset }: Props) {
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.heading}>Result</h2>
-        <button onClick={onReset} style={styles.resetButton}>
-          ← New request
-        </button>
+    <div style={s.container}>
+      <div style={s.header}>
+        <span className="section-label">Result</span>
+        <button onClick={onReset} style={s.resetBtn}>← New request</button>
       </div>
 
-      {/* ── Job status ───────────────────────────────────────────────────── */}
       <JobStatus
         phase={phase}
         status={result?.status}
@@ -39,17 +29,8 @@ export function ResultPanel({ phase, result, jobId, errorMessage, onReset }: Pro
         errorMessage={errorMessage ?? result?.error_message ?? undefined}
       />
 
-      {/* ── Scenario summary ─────────────────────────────────────────────── */}
-      {(phase === "done" || result?.scenario_summary) && (
-        <ScenarioSummary summary={result?.scenario_summary ?? null} />
-      )}
-
-      {/* ── Warnings ─────────────────────────────────────────────────────── */}
-      {result?.warnings && result.warnings.length > 0 && (
-        <WarningsPanel warnings={result.warnings} />
-      )}
-
-      {/* ── Generated code preview ───────────────────────────────────────── */}
+      {result?.scenario_summary && <ScenarioSummary summary={result.scenario_summary} />}
+      {result?.warnings && result.warnings.length > 0 && <WarningsPanel warnings={result.warnings} />}
       {(phase === "done" || result?.generated_code) && (
         <CodePreview code={result?.generated_code ?? null} outputFormat={result?.output_format} />
       )}
@@ -57,28 +38,25 @@ export function ResultPanel({ phase, result, jobId, errorMessage, onReset }: Pro
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   container: {
     display: "flex",
     flexDirection: "column",
-    gap: "1.25rem",
+    gap: "0.75rem",
   },
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  heading: {
-    fontSize: "1.2rem",
-    fontWeight: 700,
-  },
-  resetButton: {
+  resetBtn: {
     background: "none",
-    border: "1px solid var(--color-border)",
-    borderRadius: "var(--radius)",
-    color: "var(--color-text-muted)",
+    border: "1px solid var(--border-2)",
+    borderRadius: "var(--radius-sm)",
+    color: "var(--text-3)",
     cursor: "pointer",
-    fontSize: "0.85rem",
-    padding: "0.4rem 0.85rem",
+    fontSize: "0.75rem",
+    padding: "0.3rem 0.7rem",
+    fontFamily: "var(--font-sans)",
   },
 };

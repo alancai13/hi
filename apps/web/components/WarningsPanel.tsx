@@ -1,25 +1,18 @@
 "use client";
 
-/**
- * components/WarningsPanel.tsx
- *
- * Displays a list of GenerationWarnings from the backend.
- * Each warning shows its severity badge, message, and optionally the element selector.
- */
-
 import type { GenerationWarning } from "@/types";
 
 interface Props {
   warnings: GenerationWarning[];
 }
 
-const SEVERITY_COLORS: Record<string, string> = {
-  info: "var(--color-text-muted)",
-  warning: "var(--color-warning)",
-  error: "var(--color-error)",
+const SEV_COLOR: Record<string, string> = {
+  info: "var(--info)",
+  warning: "var(--warning)",
+  error: "var(--error)",
 };
 
-const SEVERITY_ICONS: Record<string, string> = {
+const SEV_ICON: Record<string, string> = {
   info: "ℹ",
   warning: "⚠",
   error: "✕",
@@ -29,34 +22,24 @@ export function WarningsPanel({ warnings }: Props) {
   if (warnings.length === 0) return null;
 
   return (
-    <div style={styles.card}>
-      <h3 style={styles.heading}>
-        Warnings &amp; selector confidence
-        <span style={styles.count}>{warnings.length}</span>
-      </h3>
-      <ul style={styles.list}>
+    <div style={s.card}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.65rem" }}>
+        <span className="section-label">Warnings</span>
+        <span style={s.count}>{warnings.length}</span>
+      </div>
+      <ul style={s.list}>
         {warnings.map((w, i) => (
-          <li key={i} style={styles.item}>
-            <span
-              style={{
-                ...styles.icon,
-                color: SEVERITY_COLORS[w.severity] ?? "var(--color-text-muted)",
-              }}
-            >
-              {SEVERITY_ICONS[w.severity] ?? "•"}
+          <li key={i} style={s.item}>
+            <span style={{ color: SEV_COLOR[w.severity] ?? "var(--text-2)", flexShrink: 0, fontSize: "0.8rem" }}>
+              {SEV_ICON[w.severity] ?? "•"}
             </span>
-            <div style={styles.content}>
-              <span style={styles.message}>{w.message}</span>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+              <span style={{ fontSize: "0.82rem" }}>{w.message}</span>
               {w.element && (
-                <code style={styles.selector}>{w.element}</code>
+                <code style={{ fontSize: "0.73rem", color: "var(--text-3)" }}>{w.element}</code>
               )}
             </div>
-            <span
-              style={{
-                ...styles.badge,
-                color: SEVERITY_COLORS[w.severity] ?? "var(--color-text-muted)",
-              }}
-            >
+            <span style={{ ...s.sevBadge, color: SEV_COLOR[w.severity] ?? "var(--text-2)" }}>
               {w.severity}
             </span>
           </li>
@@ -66,66 +49,36 @@ export function WarningsPanel({ warnings }: Props) {
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   card: {
-    background: "var(--color-surface)",
-    border: "1px solid var(--color-border)",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: "var(--radius)",
-    padding: "1rem 1.25rem",
-  },
-  heading: {
-    fontSize: "0.8rem",
-    fontWeight: 600,
-    color: "var(--color-text-muted)",
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
-    marginBottom: "0.75rem",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
+    padding: "0.9rem 1.1rem",
   },
   count: {
-    background: "var(--color-surface-2)",
+    fontSize: "0.7rem",
+    background: "var(--surface-3)",
     borderRadius: "999px",
-    fontSize: "0.75rem",
-    padding: "0.1rem 0.5rem",
-    color: "var(--color-text)",
+    padding: "0.05rem 0.45rem",
+    color: "var(--text-2)",
   },
   list: {
     listStyle: "none",
     display: "flex",
     flexDirection: "column",
-    gap: "0.6rem",
+    gap: "0.4rem",
   },
   item: {
     display: "flex",
     alignItems: "flex-start",
-    gap: "0.6rem",
-    padding: "0.6rem 0.75rem",
-    background: "var(--color-surface-2)",
-    borderRadius: "var(--radius)",
+    gap: "0.55rem",
+    padding: "0.5rem 0.65rem",
+    background: "var(--surface-2)",
+    borderRadius: "var(--radius-sm)",
   },
-  icon: {
-    fontSize: "0.9rem",
-    flexShrink: 0,
-    marginTop: "1px",
-  },
-  content: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.2rem",
-  },
-  message: {
-    fontSize: "0.875rem",
-  },
-  selector: {
-    fontSize: "0.78rem",
-    color: "var(--color-text-muted)",
-    fontFamily: "var(--font-mono)",
-  },
-  badge: {
-    fontSize: "0.72rem",
+  sevBadge: {
+    fontSize: "0.68rem",
     fontWeight: 600,
     textTransform: "uppercase" as const,
     letterSpacing: "0.04em",
