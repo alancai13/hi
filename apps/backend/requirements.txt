@@ -25,6 +25,7 @@ playwright==1.48.0
 # google-cloud-aiplatform: Vertex AI auth (service account / ADC)
 # Both use the same Gemini models; swap via GEMINI_BACKEND in .env
 google-generativeai==0.8.3
+google-cloud-aiplatform>=1.60.0
 
 # ─── Dev / tooling ────────────────────────────────────────────────────────────
 ruff==0.7.0

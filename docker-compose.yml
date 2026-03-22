@@ -10,22 +10,22 @@ version: "3.9"
 
 services:
   # ─── Frontend (Next.js) ─────────────────────────────────────────────────────
-  web:
+  frontend:
     build:
-      context: ./apps/web
+      context: ./apps/frontend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://api:8000
+      - NEXT_PUBLIC_API_URL=http://backend:8000
     depends_on:
-      - api
+      - backend
     # TODO: Add volume mounts for hot-reload in dev mode
 
   # ─── Backend (FastAPI) ──────────────────────────────────────────────────────
-  api:
+  backend:
     build:
-      context: ./apps/api
+      context: ./apps/backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"

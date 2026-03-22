@@ -4,7 +4,7 @@
  * Shared TypeScript types mirroring the backend Pydantic schemas.
  * These are the source of truth for the API contract on the frontend side.
  *
- * Keep in sync with: apps/api/app/schemas/generation.py
+ * Keep in sync with: apps/backend/app/schemas/generation.py
  */
 
 // ─── Enums ────────────────────────────────────────────────────────────────────

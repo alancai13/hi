@@ -36,10 +36,7 @@ export default function HomePage() {
     <div style={s.page}>
       <div style={s.hero}>
         <h1 style={s.heading}>E2E Test Generator</h1>
-        <p style={s.sub}>
-          Provide a URL, acceptance criteria, and any relevant files or screenshots.
-          TestGen will inspect the page and generate a Playwright test script.
-        </p>
+        <p style={s.sub}>URL in. Playwright test out.</p>
       </div>
 
       <GeneratorForm onSubmit={handleSubmit} isLoading={isLoading} />
@@ -68,19 +65,19 @@ const s: Record<string, React.CSSProperties> = {
   hero: {
     display: "flex",
     flexDirection: "column",
-    gap: "0.5rem",
+    gap: "0.75rem",
+    paddingBottom: "0.5rem",
   },
   heading: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    letterSpacing: "-0.03em",
+    fontSize: "2.5rem",
+    fontWeight: 800,
+    letterSpacing: "-0.04em",
     color: "var(--text)",
+    lineHeight: 1.1,
   },
   sub: {
-    fontSize: "0.875rem",
+    fontSize: "1rem",
     color: "var(--text-2)",
-    maxWidth: "560px",
-    lineHeight: 1.65,
   },
   results: {
     display: "flex",

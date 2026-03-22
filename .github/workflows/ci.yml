@@ -27,24 +27,24 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: apps/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: apps/web
+        working-directory: apps/frontend
 
       - name: Lint
         run: npm run lint
-        working-directory: apps/web
+        working-directory: apps/frontend
 
       - name: Type check
         run: npm run type-check
-        working-directory: apps/web
+        working-directory: apps/frontend
 
       # TODO: Add unit tests when test suite is set up
       # - name: Test
       #   run: npm test
-      #   working-directory: apps/web
+      #   working-directory: apps/frontend
 
   # ─── Backend ────────────────────────────────────────────────────────────────
   backend:
@@ -62,25 +62,25 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-        working-directory: apps/api
+        working-directory: apps/backend
 
       - name: Ruff lint
         run: ruff check app/
-        working-directory: apps/api
+        working-directory: apps/backend
 
       - name: Ruff format check
         run: ruff format --check app/
-        working-directory: apps/api
+        working-directory: apps/backend
 
       # TODO: Add mypy strict type checking
       # - name: Type check
       #   run: mypy app/
-      #   working-directory: apps/api
+      #   working-directory: apps/backend
 
       # TODO: Add pytest when test suite is set up
       # - name: Test
       #   run: pytest
-      #   working-directory: apps/api
+      #   working-directory: apps/backend
 
   # ─── Future jobs (commented out) ────────────────────────────────────────────
   # e2e:

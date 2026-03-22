@@ -33,9 +33,9 @@ const s: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   wordmark: {
-    fontWeight: 700,
-    fontSize: "0.95rem",
-    letterSpacing: "-0.02em",
+    fontWeight: 800,
+    fontSize: "1rem",
+    letterSpacing: "-0.03em",
     color: "var(--text)",
   },
   badge: {
