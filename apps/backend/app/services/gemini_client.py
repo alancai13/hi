@@ -102,11 +102,27 @@ class GeminiClient:
                 sdk_parts.append({"mime_type": p.mime_type, "data": p.data})
         return sdk_parts
 
-    def _call_sync(self, parts: list[GeminiPart]) -> str:
+    def _build_generation_config(self, json_mode: bool):
+        """Return a generation config for the current backend, or None."""
+        if not json_mode:
+            return None
+        if settings.GEMINI_BACKEND == "gemini_api":
+            import google.generativeai as genai  # type: ignore[import-untyped]
+
+            return genai.GenerationConfig(response_mime_type="application/json")
+        if settings.GEMINI_BACKEND == "vertex":
+            from vertexai.generative_models import GenerationConfig  # type: ignore[import-untyped]
+
+            return GenerationConfig(response_mime_type="application/json")
+        return None
+
+    def _call_sync(self, parts: list[GeminiPart], json_mode: bool = False) -> str:
         """Synchronous generation call — called from a thread pool."""
         model = self._get_model()
         sdk_parts = self._build_sdk_parts(parts)
-        response = model.generate_content(sdk_parts)
+        config = self._build_generation_config(json_mode)
+        kwargs = {"generation_config": config} if config is not None else {}
+        response = model.generate_content(sdk_parts, **kwargs)
 
         # Vertex AI: response.text raises if candidates are empty or blocked
         try:
@@ -124,15 +140,16 @@ class GeminiClient:
 
         return text
 
-    async def generate(self, parts: list[GeminiPart]) -> str:
+    async def generate(self, parts: list[GeminiPart], json_mode: bool = False) -> str:
         """
         Generate content from a mixed list of text and image parts.
         Non-blocking — runs the synchronous SDK call in a thread pool.
+        Set json_mode=True to request a guaranteed JSON response from the model.
         """
         loop = asyncio.get_running_loop()
-        fn = functools.partial(self._call_sync, parts)
+        fn = functools.partial(self._call_sync, parts, json_mode)
         text = await loop.run_in_executor(None, fn)
-        logger.info("Gemini generation complete (%d chars)", len(text))
+        logger.info("Gemini generation complete (%d chars, json_mode=%s)", len(text), json_mode)
         return text
 
 

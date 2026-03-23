@@ -1,18 +1,20 @@
 """
 app/services/generation_service.py — Generation pipeline orchestrator
 
-Pipeline stages:
-  1. Create job + persist (synchronous — returns job_id to caller)
-  2. run_pipeline() — called as asyncio.create_task, runs in background:
-       a. PageInspector.inspect_page(url)      → PageSnapshot
-       b. CodeGenerator.generate(job, snap)    → GeneratedArtifact  (calls Gemini)
-       c. Persist artifact, mark job completed
+6-stage multi-agent pipeline:
+  Stage 1 — IntakeAgent:      normalise URL + requirements → IntakeResult
+  Stage 2 — PageInspector:    Playwright DOM capture → PageSnapshot
+  Stage 3 — PlanningAgent:    LLM reasoning → TestPlan (structured JSON)
+  Stage 4 — CodegenAgent:     template rendering → TypeScript (no LLM)
+  Stage 5 — ValidationAgent:  static analysis → ValidationResult (no LLM)
+  Stage 6 — RepairAgent:      LLM fixes the plan if validation fails (≤2 attempts)
 """
 
 from datetime import datetime
 
 from app.core.logging import get_logger
 from app.domain.models import (
+    GeneratedArtifact,
     GenerationJob,
     JobStatus,
     OutputFormat,
@@ -27,18 +29,28 @@ from app.schemas.generation import (
 from app.schemas.generation import GenerationWarning as WarningSchema
 from app.schemas.generation import JobStatus as JobStatusSchema
 from app.schemas.generation import OutputFormat as OutputFormatSchema
-from app.services.code_generator import CodeGenerator
+from app.services.agents.codegen_agent import CodegenAgent
+from app.services.agents.intake_agent import IntakeAgent
+from app.services.agents.planning_agent import PlanningAgent
+from app.services.agents.repair_agent import RepairAgent
+from app.services.agents.validation_agent import ValidationAgent
 from app.services.page_inspector import PageInspector
 
 logger = get_logger(__name__)
 
+_MAX_REPAIR_ATTEMPTS = 2
+
 
 class GenerationService:
-    """Coordinates job lifecycle and delegates to pipeline services."""
+    """Coordinates job lifecycle and runs the 6-stage agent pipeline."""
 
     def __init__(self) -> None:
         self.inspector = PageInspector()
-        self.generator = CodeGenerator()
+        self.intake = IntakeAgent()
+        self.planner = PlanningAgent()
+        self.codegen = CodegenAgent()
+        self.validator = ValidationAgent()
+        self.repair = RepairAgent()
 
     # ─── Public API ───────────────────────────────────────────────────────────
 
@@ -88,31 +100,58 @@ class GenerationService:
 
     async def run_pipeline(self, job_id: str) -> None:
         """
-        Full generation pipeline. Called as an asyncio background task.
-
-        Steps:
-          1. Page inspection via Playwright
-          2. Test generation via Gemini
+        Full 6-stage generation pipeline. Called as an asyncio background task.
         """
         job = await job_store.get(job_id)
         if job is None or job.input is None:
             logger.error("run_pipeline: job %s not found", job_id)
             return
 
-        # ── Mark as running ───────────────────────────────────────────────────
         job.status = JobStatus.running
         await job_store.save(job)
 
         try:
-            # ── Step 1: Inspect the page ──────────────────────────────────────
-            logger.info("[%s] Step 1/2 — inspecting %s", job_id, job.input.target_url)
-            snapshot = await self.inspector.inspect_page(job.input.target_url)
+            target_url = job.input.target_url
+            requirements = job.input.requirements or ""
 
-            # ── Step 2: Generate the test script ──────────────────────────────
-            logger.info("[%s] Step 2/2 — calling Gemini", job_id)
-            artifact = await self.generator.generate(job, snapshot)
+            # ── Stage 1: Intake ───────────────────────────────────────────────
+            logger.info("[%s] Stage 1/6 — intake", job_id)
+            intake = await self.intake.run(target_url, requirements)
 
-            # ── Mark as completed ─────────────────────────────────────────────
+            # ── Stage 2: Page inspection ──────────────────────────────────────
+            logger.info("[%s] Stage 2/6 — inspecting %s", job_id, target_url)
+            snapshot = await self.inspector.inspect_page(target_url)
+
+            # ── Stage 3: Planning ─────────────────────────────────────────────
+            logger.info("[%s] Stage 3/6 — planning", job_id)
+            plan = await self.planner.run(intake, snapshot)
+
+            # ── Stage 4 → 5 → 6 loop: Codegen → Validate → Repair ────────────
+            code = self.codegen.run(plan)
+            validation = self.validator.run(code)
+
+            for attempt in range(1, _MAX_REPAIR_ATTEMPTS + 1):
+                if not validation.has_errors:
+                    break
+                logger.info(
+                    "[%s] Stage 6 — repair attempt %d/%d (%d errors)",
+                    job_id,
+                    attempt,
+                    _MAX_REPAIR_ATTEMPTS,
+                    sum(1 for i in validation.issues if i.severity == "error"),
+                )
+                plan = await self.repair.run(plan, validation)
+                code = self.codegen.run(plan)
+                validation = self.validator.run(code)
+
+            artifact = GeneratedArtifact(
+                job_id=job_id,
+                output_format=job.input.output_format,
+                code=code,
+                scenario_summary=plan.description,
+                warnings=[],
+            )
+
             job.artifact = artifact
             job.status = JobStatus.completed
             job.completed_at = datetime.utcnow()

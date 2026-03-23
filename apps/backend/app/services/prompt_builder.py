@@ -21,14 +21,15 @@ logger = get_logger(__name__)
 # Selector strategy guide injected into every prompt
 _SELECTOR_GUIDE = """\
 Selector priority (most stable → least stable):
-  1. page.getByTestId('value')         ← data-testid attribute
-  2. page.getByRole('role', {name})    ← ARIA role + accessible name
-  3. page.getByLabel('label')          ← associated <label> text
-  4. page.getByPlaceholder('text')     ← placeholder attribute
-  5. page.getByText('text')            ← visible text (buttons, links)
-  6. page.locator('#id')               ← unique id attribute
-  7. page.locator('[name="x"]')        ← name attribute (forms)
-  8. page.locator('css-selector')      ← CSS (last resort)\
+  1. page.locator('[data-test="value"]')   ← data-test attribute (common in Angular/Vue apps)
+  2. page.getByTestId('value')             ← data-testid attribute
+  3. page.getByRole('role', {name})        ← ARIA role + accessible name
+  4. page.getByLabel('label')              ← associated <label> text
+  5. page.getByPlaceholder('text')         ← placeholder attribute
+  6. page.getByText('text')                ← visible text (buttons, links)
+  7. page.locator('#id')                   ← unique id attribute
+  8. page.locator('[name="x"]')            ← name attribute (forms)
+  9. page.locator('css-selector')          ← CSS (last resort)\
 """
 
 
@@ -45,7 +46,14 @@ def build_parts(job: GenerationJob, snapshot: PageSnapshot) -> list[GeminiPart]:
     parts.append(GeminiPart(text=_SYSTEM_INSTRUCTION))
 
     # ── Target page context ───────────────────────────────────────────────────
-    parts.append(GeminiPart(text=_format_page_context(snapshot)))
+    parts.append(GeminiPart(text=_format_page_context(snapshot, label="Page 1 (Entry URL)")))
+
+    # ── Additional pages (cart, product, login) ───────────────────────────────
+    for i, extra in enumerate(snapshot.additional_pages, start=2):
+        parts.append(GeminiPart(text=_format_page_context(extra, label=f"Page {i}")))
+        if extra.screenshot_bytes:
+            parts.append(GeminiPart(text=f"[Screenshot of Page {i}: {extra.url}]"))
+            parts.append(GeminiPart(data=extra.screenshot_bytes, mime_type="image/png"))
 
     # ── Page screenshot ───────────────────────────────────────────────────────
     if snapshot.screenshot_bytes:
@@ -103,8 +111,8 @@ def build_parts(job: GenerationJob, snapshot: PageSnapshot) -> list[GeminiPart]:
 # ─── Formatters ───────────────────────────────────────────────────────────────
 
 
-def _format_page_context(snapshot: PageSnapshot) -> str:
-    lines = ["## Target Page\n"]
+def _format_page_context(snapshot: PageSnapshot, label: str = "Target Page") -> str:
+    lines = [f"## {label}\n"]
     lines.append(f"**URL:** {snapshot.url}")
     lines.append(f"**Title:** {snapshot.title}")
 
@@ -122,6 +130,14 @@ def _format_page_context(snapshot: PageSnapshot) -> str:
         lines.append("(Use these to write accurate selectors)\n")
         for el in snapshot.elements:
             lines.append(_format_element(el))
+
+    if snapshot.nav_links:
+        lines.append("\n### Navigation Links (from nav/header — use these for routing)")
+        lines.append("These are the ACTUAL hrefs in the page nav. Use them for goto() calls.")
+        for link in snapshot.nav_links:
+            text = link.get("text") or "(no text)"
+            href = link.get("href", "")
+            lines.append(f"  {text}  →  {href}")
 
     if snapshot.page_text_excerpt:
         lines.append("\n### Visible Page Text (excerpt)")
@@ -187,7 +203,34 @@ Rules:
 - If multiple user flows exist, create one `test()` per flow
 - Do NOT hardcode credentials — use placeholder values like `'testuser@example.com'`
 - Do NOT use `page.waitForTimeout()` for timing — use proper `waitFor` methods
-- Handle potential redirects with `expect(page).toHaveURL(...)`
+- ALWAYS use `await expect(page).toHaveURL(...)` for URL assertions — NEVER use the synchronous
+  `expect(page.url()).toContain(...)` which runs once and does not retry
+
+Selector strictness rules (CRITICAL — Playwright throws if a locator matches multiple elements):
+- NEVER use a locator that could match more than one element without calling `.first()`, `.nth(n)`,
+  or narrowing with `.filter()`
+- When selecting from a list of results (search results, product cards, table rows), ALWAYS scope
+  to a specific card element first: e.g. `page.locator('.card').first()` not `page.getByText('...')`
+- Only use `page.getByTestId()` or `data-testid` selectors if `data-testid` attributes are present
+  in the page elements provided above — do NOT assume they exist
+- Only use `page.locator('[data-test="x"]')` if `data-test` attributes are present in the elements
+- When using getByRole('link', {{ name: '...' }}), the name must EXACTLY match the link's
+  accessible text including capitalisation — check the elements list above for the exact text
+
+Navigation and async rules (CRITICAL — these cause flaky tests if ignored):
+- After ANY mutating action (add to cart, submit form, delete, etc.) ALWAYS await
+  `page.waitForLoadState('networkidle')` or `expect(element).toBeVisible()` before navigating away
+- NEVER rely on transient UI elements (toasts, snackbars, notification popups) for navigation —
+  they disappear too fast; instead navigate directly with `page.goto('/path')` or click a
+  persistent link
+- NEVER invent a URL. Only use hrefs that appear in the Navigation Links section above.
+  If no cart/checkout href is listed there, click the cart icon element instead of guessing a path.
+  Do NOT write page.goto('/cart') or any path you have not seen in the navigation links.
+- If you genuinely cannot determine a URL or selector, omit that step and leave a clear
+  `// MANUAL: could not determine URL for checkout — add href from Navigation Links above` comment.
+  Do NOT substitute an unrelated page (e.g. /auth/login) as a workaround.
+- After clicking "Add to cart" or similar async actions, wait for confirmation before proceeding:
+  e.g. `await expect(page.locator('[data-test="cart-quantity"]')).not.toHaveText('0')`
 
 Output format:
 - Return ONLY valid TypeScript code
@@ -207,6 +250,17 @@ You have access to:
 1. The live page structure extracted by Playwright (elements, selectors, headings)
 2. A screenshot of the page's current state
 3. The user's test requirements and uploaded reference materials
+
+Non-negotiable quality rules:
+- Every locator must be STRICT — it must match exactly one element. If a selector could match
+  multiple elements, narrow it with .first(), .nth(), or .filter() before interacting.
+- Never depend on toasts or transient popups for navigation — navigate directly.
+- Always wait for async side-effects (cart updates, form submissions) to settle before
+  moving to the next step. Use waitForLoadState('networkidle') or targeted expect() assertions.
+- Only reference URLs you have evidence for from the page snapshot. Do not invent routes.
+- If a required URL or element is not in the snapshot, follow a visible link/button to get there
+  rather than guessing. If truly unknown, leave a `// TODO: verify this URL` comment — NEVER
+  substitute an unrelated page (e.g. navigating to /auth/login when you meant /checkout).
 
 Write tests that a professional QA engineer would be proud to commit.
 """

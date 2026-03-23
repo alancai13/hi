@@ -84,6 +84,86 @@ class PageSnapshot:
     headings: list[dict] = field(default_factory=list)  # [{level, text}]
     elements: list[PageElement] = field(default_factory=list)
     page_text_excerpt: str | None = None  # visible text, first 2000 chars
+    nav_links: list[dict] = field(default_factory=list)  # [{text, href}] from nav/header
+    additional_pages: list["PageSnapshot"] = field(default_factory=list)  # key linked pages
+
+
+# ─── Intake ───────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class IntakeResult:
+    """Normalised test requirement produced by the IntakeAgent."""
+
+    flow_type: str  # auth | ecommerce | form_submission | navigation | data_display | other
+    goal: str  # one sentence: what must be true for the test to pass
+    entities: list[str]  # key UI nouns: ["email field", "submit button"]
+    constraints: list[str]  # ["do not hardcode passwords", ...]
+    requires_auth: bool = False
+    multi_page: bool = False
+
+
+# ─── Test plan ────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class TestStep:
+    """A single action in a test flow."""
+
+    # goto | fill | click | wait_for_url | wait_for_networkidle
+    # | wait_for_visible | select_option
+    action: str
+    selector: str | None = None  # None for goto / wait_for_url / wait_for_networkidle
+    value: str | None = None  # URL for goto, text for fill, option for select_option
+    description: str = ""  # rendered as a comment in the generated code
+
+
+@dataclass
+class TestAssertion:
+    """A single expect() assertion."""
+
+    # url_contains | element_visible | element_text | element_count | not_visible
+    assertion_type: str
+    selector: str | None = None  # None for url_contains
+    expected_value: str = ""
+    description: str = ""
+
+
+@dataclass
+class TestPlan:
+    """Structured plan produced by PlanningAgent; rendered to code by CodegenAgent."""
+
+    test_name: str
+    description: str
+    before_each_url: str
+    steps: list[TestStep] = field(default_factory=list)
+    assertions: list[TestAssertion] = field(default_factory=list)
+    plan_warnings: list[str] = field(default_factory=list)
+
+
+# ─── Validation ───────────────────────────────────────────────────────────────
+
+
+@dataclass
+class ValidationIssue:
+    """A single problem found by ValidationAgent."""
+
+    issue_type: str  # fragile_selector | missing_wait | no_assertions | broad_locator | other
+    severity: str  # error | warning | info
+    message: str
+    line_hint: str | None = None
+
+
+@dataclass
+class ValidationResult:
+    """Output of ValidationAgent."""
+
+    passed: bool
+    issues: list[ValidationIssue] = field(default_factory=list)
+
+    @property
+    def has_errors(self) -> bool:
+        return any(i.severity == "error" for i in self.issues)
 
 
 # ─── Generation output ────────────────────────────────────────────────────────
